@@ -1,6 +1,18 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const UserSchema = new Schema({
+export interface IUser extends Document {
+  email: string;
+  fullname: string;
+  username: string;
+  password: string;
+  confirmHash: string;
+  confirmed?: boolean;
+  location?: string;
+  about?: string;
+  website?: string;
+}
+
+const UserSchema: Schema = new Schema({
   email: {
     unique: true,
     type: String,
@@ -19,14 +31,17 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
-  confirmed_hash: {
+  confirmHash: {
     type: String,
     required: true,
   },
+  confirmed: {
+    type: Boolean,
+    default: false,
+  },
   location: String,
-  confirmed: Boolean,
   about: String,
   website: String,
 });
 
-export const UserModel = mongoose.model('User', UserSchema);
+export const UserModel = mongoose.model<IUser>('User', UserSchema);
