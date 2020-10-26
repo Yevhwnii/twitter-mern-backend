@@ -6,6 +6,7 @@ import { validationResult } from 'express-validator';
 import { UserModel } from '../models/User';
 import { generateMD5 } from '../utils/generateHash';
 import { sendEmail } from '../utils/sendEmail';
+import { isValidObjectId } from '../utils/isValidObjectId';
 
 class UserController {
   async index(_: any, res: express.Response): Promise<void> {
@@ -18,7 +19,30 @@ class UserController {
     } catch (error) {
       res.status(500).json({
         status: 'error',
-        message: JSON.stringify(error),
+        message: error,
+      });
+    }
+  }
+
+  async show(req: any, res: express.Response): Promise<void> {
+    try {
+      const userId = req.params.id;
+      if (!isValidObjectId(userId)) {
+        throw new Error('Id is not valid (must be objectId)');
+      }
+      const user = await UserModel.findById(userId).exec();
+      if (user) {
+        res.json({
+          status: 'success',
+          data: user,
+        });
+      } else {
+        throw new Error('User does not exist');
+      }
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        message: error.message,
       });
     }
   }
@@ -35,7 +59,7 @@ class UserController {
         email: req.body.email,
         fullname: req.body.fullname,
         username: req.body.username,
-        password: req.body.password,
+        password: generateMD5(process.env.SECRET_KEY + req.body.password),
         confirmHash: generateMD5(
           process.env.SECRET_KEY || Math.random().toString()
         ),
@@ -93,6 +117,20 @@ class UserController {
     res.json({
       status: 'success',
     });
+  }
+
+  async getMe(req: any, res: express.Response): Promise<void> {
+    try {
+      res.json({
+        status: 'success',
+        data: req.user,
+      });
+    } catch (error) {
+      res.json({
+        status: 'error',
+        message: 'Cannot get me',
+      });
+    }
   }
 }
 
