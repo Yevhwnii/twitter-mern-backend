@@ -44,4 +44,12 @@ const UserSchema: Schema = new Schema({
   website: String,
 });
 
+UserSchema.set('toJSON', {
+  transform: function (_, obj) {
+    delete obj.password;
+    delete obj.confirmHash;
+    return obj;
+  },
+});
+
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
