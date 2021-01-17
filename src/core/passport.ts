@@ -35,18 +35,26 @@ passport.use(
   new JWTStragery.Strategy(
     {
       secretOrKey: process.env.JWT_SECRET,
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromHeader('token'),
     },
-    async (payload, done) => {
+    async (payload: { data: IUser }, done) => {
       try {
-        return done(null, payload.user);
+        const user = await UserModel.findById(payload.data._id).exec();
+
+        if (user) {
+          return done(null, user);
+        }
+
+        done(null, false);
       } catch (error) {
-        done(error);
+        done(error, false);
       }
     }
   )
 );
 
+// Serialize function is saved in session, we call it with user.id so that deserialize function get retreive user object from this id
+// The reason we get user object here is that we call done() with user object as an argument in passport.use()
 passport.serializeUser((user: IUser, done) => {
   done(null, user._id);
 });
@@ -54,7 +62,9 @@ passport.serializeUser((user: IUser, done) => {
 passport.deserializeUser((id, done) => {
   UserModel.findById(id, (err, user) => {
     done(err, user);
-  }).exec();
+  })
+    .populate('-password')
+    .exec();
 });
 
 export { passport };
